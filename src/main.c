@@ -100,30 +100,49 @@ static void draw(void) {
     } else if (buf_nlines > 0 || r > 0) {
       mvaddch(r, 0, '~');
     }
-    // else: empty file, row 0 stays as spaces
   }
 
-  // Status line: left part + right ruler (always 18 chars)
-  char left[256];
-  if (buf_nlines == 0)
-    snprintf(left, sizeof(left), "\"%s\" 0L, 0B", filename);
-  else
-    snprintf(left, sizeof(left), "\"%s\" %dL, %dB", filename, buf_nlines,
-             buf_nbytes);
-
   char pos[15];
-  if (buf_nlines == 0)
-    snprintf(pos, sizeof(pos), "0,0-1");
-  else
-    snprintf(pos, sizeof(pos), "%d,%d", cursor_row + 1, cursor_col + 1);
-
+  format_position(pos, sizeof(pos));
   char right[19];
   snprintf(right, sizeof(right), "%-14s%-4s", pos, "All");
 
-  mvprintw(LINES - 1, 0, "%-62s%s", left, right);
+  if (startup_msg) {
+    char left[256];
+    if (buf_nlines == 0)
+      snprintf(left, sizeof(left), "\"%s\" 0L, 0B", filename);
+    else
+      snprintf(left, sizeof(left), "\"%s\" %dL, %dB", filename, buf_nlines,
+               buf_nbytes);
+    mvprintw(LINES - 1, 0, "%-62s%s", left, right);
+  } else {
+    mvprintw(LINES - 1, 0, "%-62s%s", "", right);
+  }
 
   move(cursor_row, cursor_col);
   refresh();
+}
+
+static void handle_insert(int ch) {
+  switch (ch) {
+  case 27: // ESC
+    mode = MODE_NORMAL;
+    if (cursor_col > 0)
+      cursor_col--;
+    break;
+  case KEY_BACKSPACE:
+  case 127:
+    buf_backspace();
+    break;
+  case '\r':
+  case '\n':
+    buf_split_line();
+    break;
+  default:
+    if (ch >= 32 && ch < 127)
+      buf_insert_char((char)ch);
+    break;
+  }
 }
 
 int main(int argc, char *argv[]) {
