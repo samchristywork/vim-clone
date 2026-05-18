@@ -29,10 +29,30 @@ static void buf_insert_char(char ch) {
   cursor_col++;
 }
 
-static void load_file(const char *path) {
-  FILE *f = fopen(path, "r");
-  if (!f)
-    return;
+static void buf_backspace(void) {
+  if (cursor_col > 0) {
+    char *line = buf_lines[cursor_row];
+    memmove(line + cursor_col - 1, line + cursor_col,
+            strlen(line) - cursor_col + 1);
+    cursor_col--;
+  } else if (cursor_row > 0) {
+    char *prev = buf_lines[cursor_row - 1];
+    char *cur = buf_lines[cursor_row];
+    int prev_len = strlen(prev);
+    int cur_len = strlen(cur);
+    char *joined = malloc(prev_len + cur_len + 1);
+    memcpy(joined, prev, prev_len);
+    memcpy(joined + prev_len, cur, cur_len + 1);
+    free(prev);
+    free(cur);
+    buf_lines[cursor_row - 1] = joined;
+    memmove(buf_lines + cursor_row, buf_lines + cursor_row + 1,
+            (buf_nlines - cursor_row - 1) * sizeof(char *));
+    buf_nlines--;
+    cursor_row--;
+    cursor_col = prev_len;
+  }
+}
 
   char line[MAX_LINE_LEN];
   while (fgets(line, sizeof(line), f) && buf_nlines < MAX_LINES) {
