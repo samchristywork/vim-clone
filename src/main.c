@@ -54,15 +54,39 @@ static void buf_backspace(void) {
   }
 }
 
-  char line[MAX_LINE_LEN];
-  while (fgets(line, sizeof(line), f) && buf_nlines < MAX_LINES) {
-    int len = strlen(line);
-    buf_nbytes += len;
-    if (len > 0 && line[len - 1] == '\n')
-      line[--len] = '\0';
-    buf_lines[buf_nlines++] = strdup(line);
+static void buf_split_line(void) {
+  char *line = buf_lines[cursor_row];
+  int len = strlen(line);
+  int tail = len - cursor_col;
+  char *new_line = malloc(tail + 1);
+  memcpy(new_line, line + cursor_col, tail + 1);
+  line[cursor_col] = '\0';
+  memmove(buf_lines + cursor_row + 2, buf_lines + cursor_row + 1,
+          (buf_nlines - cursor_row - 1) * sizeof(char *));
+  buf_lines[cursor_row + 1] = new_line;
+  buf_nlines++;
+  cursor_row++;
+  cursor_col = 0;
+}
+
+static void buf_insert_line(int row) {
+  memmove(buf_lines + row + 1, buf_lines + row,
+          (buf_nlines - row) * sizeof(char *));
+  buf_lines[row] = strdup("");
+  buf_nlines++;
+}
+
+static void format_position(char *pos, int pos_len) {
+  if (buf_nlines == 0) {
+    snprintf(pos, pos_len, "0,0-1");
+    return;
   }
-  fclose(f);
+  int vim_line = cursor_row + 1;
+  int line_len = strlen(buf_lines[cursor_row]);
+  if (line_len == 0)
+    snprintf(pos, pos_len, "%d,0-1", vim_line);
+  else
+    snprintf(pos, pos_len, "%d,%d", vim_line, cursor_col + 1);
 }
 
 static void draw(void) {
