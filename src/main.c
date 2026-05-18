@@ -5,6 +5,8 @@
 
 #define MAX_LINES 10000
 #define MAX_LINE_LEN 4096
+#define MODE_NORMAL 0
+#define MODE_INSERT 1
 
 static char *buf_lines[MAX_LINES];
 static int buf_nlines = 0;
@@ -12,6 +14,20 @@ static int buf_nbytes = 0;
 static char *filename = NULL;
 static int cursor_row = 0;
 static int cursor_col = 0;
+static int mode = MODE_NORMAL;
+static int startup_msg = 1;
+
+static void buf_insert_char(char ch) {
+  char *line = buf_lines[cursor_row];
+  int len = strlen(line);
+  char *new_line = malloc(len + 2);
+  memcpy(new_line, line, cursor_col);
+  new_line[cursor_col] = ch;
+  memcpy(new_line + cursor_col + 1, line + cursor_col, len - cursor_col + 1);
+  free(line);
+  buf_lines[cursor_row] = new_line;
+  cursor_col++;
+}
 
 static void load_file(const char *path) {
   FILE *f = fopen(path, "r");
