@@ -145,6 +145,38 @@ static void handle_insert(int ch) {
   }
 }
 
+static void handle_normal(int ch) {
+  switch (ch) {
+  case 'i':
+    mode = MODE_INSERT;
+    break;
+  case 'a':
+    if (buf_nlines > 0) {
+      int line_len = strlen(buf_lines[cursor_row]);
+      if (cursor_col < line_len)
+        cursor_col++;
+    }
+    mode = MODE_INSERT;
+    break;
+  case 'A':
+    if (buf_nlines > 0)
+      cursor_col = strlen(buf_lines[cursor_row]);
+    mode = MODE_INSERT;
+    break;
+  case 'o':
+    buf_insert_line(cursor_row + 1);
+    cursor_row++;
+    cursor_col = 0;
+    mode = MODE_INSERT;
+    break;
+  case 'O':
+    buf_insert_line(cursor_row);
+    cursor_col = 0;
+    mode = MODE_INSERT;
+    break;
+  }
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     fprintf(stderr, "Usage: %s <file>\n", argv[0]);
